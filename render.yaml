@@ -4,8 +4,8 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: cd dashboard && npm install && npm run build
-    startCommand: cd dashboard && npm run start:render
+    buildCommand: bash render-build.sh
+    startCommand: bash render-start.sh
     envVars:
       - key: NODE_ENV
         value: production
