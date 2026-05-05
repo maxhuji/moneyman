@@ -1,0 +1,41 @@
+{
+  // Moneyman configuration example
+  // Copy this to moneyman.conf.jsonc and fill in your credentials
+
+  "accounts": [
+    {
+      "companyId": "discount",
+      "id": "YOUR_ID",
+      "password": "YOUR_PASSWORD",
+      "num": "YOUR_NUM",
+    },
+    {
+      "companyId": "max",
+      "username": "YOUR_EMAIL@example.com",
+      "password": "YOUR_PASSWORD",
+    },
+  ],
+  "storage": {
+    "googleSheets": {
+      "serviceAccountPrivateKey": "YOUR_PRIVATE_KEY",
+      "serviceAccountEmail": "YOUR_SERVICE_ACCOUNT@PROJECT.iam.gserviceaccount.com",
+      "sheetId": "YOUR_SHEET_ID",
+      "worksheetName": "Moneyman",
+    },
+  },
+  "options": {
+    "scraping": {
+      "daysBack": 180,
+      // Use the new transaction hash type
+      "transactionHashType": "moneyman",
+      // Hide the deprecation warning
+      "hiddenDeprecations": ["transactionHashType"],
+    },
+    "notifications": {
+      "telegram": {
+        "apiKey": "YOUR_TELEGRAM_BOT_TOKEN",
+        "chatId": "YOUR_CHAT_ID",
+      },
+    },
+  },
+}
