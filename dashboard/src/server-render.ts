@@ -1,0 +1,102 @@
+import express from "express";
+import cors from "cors";
+import * as path from "path";
+import { CSVExporter } from "./csv-exporter";
+
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+// Configuration from environment variables
+const config = {
+  serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!,
+  serviceAccountPrivateKey:
+    process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+  sheetId: process.env.GOOGLE_SHEET_ID!,
+  worksheetName: process.env.WORKSHEET_NAME || "Moneyman",
+  budgetConfigPath: path.join(__dirname, "../budget-config.json"),
+};
+
+let cachedData: { summary: any; transactions: any[] } | null = null;
+let lastFetch = 0;
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "../public")));
+
+async function fetchData() {
+  const now = Date.now();
+  if (cachedData && now - lastFetch < CACHE_DURATION) {
+    return cachedData;
+  }
+
+  console.log("Fetching fresh data from Google Sheets...");
+  const exporter = new CSVExporter(
+    config.serviceAccountEmail,
+    config.serviceAccountPrivateKey,
+    config.sheetId,
+    config.worksheetName,
+    config.budgetConfigPath,
+  );
+
+  const { transactions, summary } = await exporter.exportInMemory();
+
+  cachedData = { summary, transactions };
+  lastFetch = now;
+
+  return cachedData;
+}
+
+// API endpoint to get budget summary
+app.get("/api/budget-summary", async (req, res) => {
+  try {
+    const data = await fetchData();
+    res.json(data.summary);
+  } catch (error) {
+    console.error("Error fetching budget summary:", error);
+    res.status(500).json({ error: "Failed to fetch budget data" });
+  }
+});
+
+// API endpoint to get all transactions
+app.get("/api/transactions", async (req, res) => {
+  try {
+    const data = await fetchData();
+    res.json(data.transactions);
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
+
+// API endpoint to get transactions by category
+app.get("/api/transactions/:category", async (req, res) => {
+  try {
+    const { category } = req.params;
+    const data = await fetchData();
+    const filtered = data.transactions.filter(
+      (tx: any) => tx.autoCategory === category,
+    );
+    res.json(filtered);
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
+
+// Manual refresh endpoint
+app.post("/api/refresh", async (req, res) => {
+  try {
+    cachedData = null;
+    await fetchData();
+    res.json({ success: true, message: "Data refreshed successfully" });
+  } catch (error) {
+    console.error("Error refreshing data:", error);
+    res.status(500).json({ error: "Failed to refresh data" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Dashboard server running on http://localhost:${PORT}`);
+  console.log("Data will be fetched from Google Sheets on first request");
+});

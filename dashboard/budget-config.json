@@ -2,34 +2,137 @@
   "categories": {
     "groceries": {
       "budget": 3000,
-      "keywords": ["שופרסל", "רמי לוי", "יינות ביתן", "מחסני השוק", "mega", "shufersal", "rami levy"]
+      "displayName": "מזון וצריכה",
+      "maxCategories": ["מזון וצריכה"],
+      "keywords": [
+        "שופרסל",
+        "רמי לוי",
+        "יינות ביתן",
+        "מחסני השוק",
+        "mega",
+        "shufersal",
+        "rami levy",
+        "victory",
+        "ויקטורי"
+      ]
     },
     "restaurants": {
       "budget": 1500,
-      "keywords": ["מסעדה", "קפה", "בית קפה", "פיצה", "המבורגר", "restaurant", "cafe", "coffee", "pizza"]
+      "displayName": "מסעדות וקפה",
+      "maxCategories": ["מסעדות, קפה וברים", "מסעדות"],
+      "keywords": [
+        "מסעדה",
+        "קפה",
+        "בית קפה",
+        "פיצה",
+        "המבורגר",
+        "restaurant",
+        "cafe",
+        "coffee"
+      ]
     },
     "transportation": {
       "budget": 800,
-      "keywords": ["דלק", "פז", "סונול", "תן ביס", "ten bis", "fuel", "gas", "parking", "חניה"]
+      "displayName": "תחבורה ודלק",
+      "maxCategories": ["תחבורה ורכבים", "דלק, חשמל וגז"],
+      "keywords": [
+        "דלק",
+        "פז",
+        "סונול",
+        "תן ביס",
+        "ten bis",
+        "fuel",
+        "gas",
+        "parking",
+        "חניה"
+      ]
     },
     "utilities": {
       "budget": 1200,
-      "keywords": ["חשמל", "מים", "ארנונה", "electricity", "water", "municipal", "hot", "cellcom", "partner", "פרטנר"]
+      "displayName": "תקשורת ושירותים",
+      "maxCategories": ["שירותי תקשורת"],
+      "keywords": [
+        "חשמל",
+        "מים",
+        "ארנונה",
+        "electricity",
+        "water",
+        "municipal",
+        "hot",
+        "cellcom",
+        "partner",
+        "פרטנר",
+        "פלאפון"
+      ]
     },
     "shopping": {
       "budget": 2000,
-      "keywords": ["זארה", "h&m", "אייסוקס", "גולף", "קסטרו", "fox", "זארה", "terminal x", "איקאה"]
+      "displayName": "קניות ואופנה",
+      "maxCategories": [
+        "אופנה",
+        "עיצוב הבית",
+        "חשמל ומחשבים",
+        "קוסמטיקה וטיפוח",
+        "ספרים ודפוס"
+      ],
+      "keywords": [
+        "זארה",
+        "h&m",
+        "אייסוקס",
+        "גולף",
+        "קסטרו",
+        "fox",
+        "terminal x",
+        "איקאה",
+        "rossmann",
+        "ernsting"
+      ]
     },
     "healthcare": {
       "budget": 500,
-      "keywords": ["סופר פארם", "ניו פארם", "pharmacy", "רופא", "doctor", "קופת חולים"]
+      "displayName": "בריאות ורפואה",
+      "maxCategories": ["רפואה ובתי מרקחת"],
+      "keywords": [
+        "סופר פארם",
+        "ניו פארם",
+        "pharmacy",
+        "רופא",
+        "doctor",
+        "קופת חולים",
+        "כללית",
+        "הראל"
+      ]
     },
     "entertainment": {
       "budget": 600,
-      "keywords": ["yes", "נטפליקס", "netflix", "spotify", "סינמה", "cinema", "rav kav", "רב קו"]
+      "displayName": "בידור ופנאי",
+      "maxCategories": ["פנאי, בידור וספורט"],
+      "keywords": [
+        "yes",
+        "נטפליקס",
+        "netflix",
+        "spotify",
+        "סינמא",
+        "cinema",
+        "duolingo"
+      ]
+    },
+    "insurance": {
+      "budget": 500,
+      "displayName": "ביטוח",
+      "maxCategories": ["ביטוח"],
+      "keywords": ["ביטוח", "insurance", "הראל", "מנורה"]
+    },
+    "travel": {
+      "budget": 0,
+      "displayName": "טיסות ותיירות",
+      "maxCategories": ["טיסות ותיירות"],
+      "keywords": ["טיסה", "flight", "hotel", "מלון"]
     },
     "other": {
       "budget": 1000,
+      "displayName": "שונות",
+      "maxCategories": ["שונות", "העברת כספים", "עירייה וממשלה", "משיכת מזומן"],
       "keywords": []
     }
   },

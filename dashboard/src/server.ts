@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import * as fs from "fs";
 import * as path from "path";
+import { parse } from "csv-parse/sync";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,11 +19,9 @@ app.get("/api/budget-summary", (req, res) => {
   );
 
   if (!fs.existsSync(summaryPath)) {
-    return res
-      .status(404)
-      .json({
-        error: "No budget summary available. Run the data export first.",
-      });
+    return res.status(404).json({
+      error: "No budget summary available. Run the data export first.",
+    });
   }
 
   const summary = JSON.parse(fs.readFileSync(summaryPath, "utf-8"));
@@ -40,25 +39,11 @@ app.get("/api/transactions", (req, res) => {
   }
 
   const csvContent = fs.readFileSync(csvPath, "utf-8");
-  const lines = csvContent.split("\n");
-  const headers = lines[0].split(",");
-
-  const transactions = lines
-    .slice(1)
-    .filter((line) => line.trim())
-    .map((line) => {
-      const values = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
-      const obj: any = {};
-      headers.forEach((header, index) => {
-        let value = values[index] || "";
-        // Remove quotes if present
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.slice(1, -1).replace(/""/g, '"');
-        }
-        obj[header.trim()] = value.trim();
-      });
-      return obj;
-    });
+  const transactions = parse(csvContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
 
   res.json(transactions);
 });
@@ -75,25 +60,11 @@ app.get("/api/transactions/:category", (req, res) => {
   }
 
   const csvContent = fs.readFileSync(csvPath, "utf-8");
-  const lines = csvContent.split("\n");
-  const headers = lines[0].split(",");
-
-  const transactions = lines
-    .slice(1)
-    .filter((line) => line.trim())
-    .map((line) => {
-      const values = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
-      const obj: any = {};
-      headers.forEach((header, index) => {
-        let value = values[index] || "";
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.slice(1, -1).replace(/""/g, '"');
-        }
-        obj[header.trim()] = value.trim();
-      });
-      return obj;
-    })
-    .filter((tx) => tx.autoCategory === category);
+  const transactions = parse(csvContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  }).filter((tx: any) => tx.autoCategory === category);
 
   res.json(transactions);
 });

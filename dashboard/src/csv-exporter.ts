@@ -22,6 +22,8 @@ interface BudgetConfig {
   categories: {
     [key: string]: {
       budget: number;
+      displayName?: string;
+      maxCategories?: string[];
       keywords: string[];
     };
   };
@@ -51,7 +53,26 @@ export class CSVExporter {
     );
   }
 
-  private categorizeTransaction(description: string, memo: string): string {
+  private categorizeTransaction(
+    maxCategory: string,
+    description: string,
+    memo: string,
+  ): string {
+    // First, try to map using the Max category column
+    if (maxCategory) {
+      for (const [category, config] of Object.entries(
+        this.budgetConfig.categories,
+      )) {
+        if (
+          config.maxCategories &&
+          config.maxCategories.includes(maxCategory)
+        ) {
+          return category;
+        }
+      }
+    }
+
+    // Fallback to keyword matching in description/memo
     const searchText = `${description} ${memo}`.toLowerCase();
 
     for (const [category, config] of Object.entries(
@@ -69,7 +90,9 @@ export class CSVExporter {
     return this.budgetConfig.defaultCategory;
   }
 
-  async export(): Promise<void> {
+  private async fetchTransactions(): Promise<
+    Array<Transaction & { autoCategory: string }>
+  > {
     console.log("Loading Google Sheet...");
     await this.doc.loadInfo();
 
@@ -108,8 +131,18 @@ export class CSVExporter {
     // Add auto-categorization
     const categorizedTransactions = transactions.map((tx) => ({
       ...tx,
-      autoCategory: this.categorizeTransaction(tx.description, tx.memo),
+      autoCategory: this.categorizeTransaction(
+        tx.category,
+        tx.description,
+        tx.memo,
+      ),
     }));
+
+    return categorizedTransactions;
+  }
+
+  async export(): Promise<void> {
+    const categorizedTransactions = await this.fetchTransactions();
 
     // Generate CSV
     const dataDir = path.join(__dirname, "../../data");
@@ -169,22 +202,106 @@ export class CSVExporter {
     this.generateBudgetSummary(categorizedTransactions, dataDir, timestamp);
   }
 
+  async exportInMemory(): Promise<{
+    transactions: Array<Transaction & { autoCategory: string }>;
+    summary: any;
+  }> {
+    const categorizedTransactions = await this.fetchTransactions();
+    const summary = this.generateBudgetSummaryInMemory(categorizedTransactions);
+    return { transactions: categorizedTransactions, summary };
+  }
+
+  private generateBudgetSummaryInMemory(
+    transactions: Array<Transaction & { autoCategory: string }>,
+  ): any {
+    // Credit card billing period: April 16, 2026 - May 15, 2026
+    const startDate = new Date(2026, 3, 16); // April 16, 2026 (month is 0-indexed)
+    const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
+
+    // Filter transactions from billing period (negative amounts are expenses)
+    // Exclude credit card billing transactions from bank accounts to avoid double-counting
+    const currentMonthExpenses = transactions.filter((tx) => {
+      const txDate = this.parseIsraeliDate(tx.date);
+      const isCreditCardBilling = tx.description.includes("חיוב לכרטיס");
+      return (
+        txDate >= startDate &&
+        txDate <= endDate &&
+        tx.amount < 0 &&
+        !isCreditCardBilling
+      );
+    });
+
+    // Deduplicate transactions by hash
+    const uniqueExpenses = currentMonthExpenses.filter(
+      (tx, index, self) => index === self.findIndex((t) => t.hash === tx.hash),
+    );
+
+    const categorySpending: { [key: string]: number } = {};
+
+    uniqueExpenses.forEach((tx) => {
+      const category = tx.autoCategory;
+      if (!categorySpending[category]) {
+        categorySpending[category] = 0;
+      }
+      categorySpending[category] += Math.abs(tx.amount);
+    });
+
+    const summary = Object.entries(this.budgetConfig.categories).map(
+      ([category, config]) => ({
+        category,
+        budget: config.budget,
+        spent: Math.round(categorySpending[category] || 0),
+        remaining: Math.round(
+          config.budget - (categorySpending[category] || 0),
+        ),
+        percentUsed:
+          config.budget === 0
+            ? null
+            : Math.round(
+                ((categorySpending[category] || 0) / config.budget) * 100,
+              ),
+      }),
+    );
+
+    return {
+      month: "2026-04-16 to 2026-05-15",
+      generatedAt: new Date().toISOString(),
+      summary,
+      totalBudget: summary.reduce((sum, item) => sum + item.budget, 0),
+      totalSpent: summary.reduce((sum, item) => sum + item.spent, 0),
+    };
+  }
+
   private generateBudgetSummary(
     transactions: Array<Transaction & { autoCategory: string }>,
     dataDir: string,
     timestamp: string,
   ): void {
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    // Credit card billing period: April 16, 2026 - May 15, 2026
+    const startDate = new Date(2026, 3, 16); // April 16, 2026 (month is 0-indexed)
+    const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
 
-    // Filter transactions from current month (negative amounts are expenses)
+    // Filter transactions from billing period (negative amounts are expenses)
+    // Exclude credit card billing transactions from bank accounts to avoid double-counting
     const currentMonthExpenses = transactions.filter((tx) => {
       const txDate = this.parseIsraeliDate(tx.date);
-      return txDate.toISOString().slice(0, 7) === currentMonth && tx.amount < 0;
+      const isCreditCardBilling = tx.description.includes("חיוב לכרטיס");
+      return (
+        txDate >= startDate &&
+        txDate <= endDate &&
+        tx.amount < 0 &&
+        !isCreditCardBilling
+      );
     });
+
+    // Deduplicate transactions by hash
+    const uniqueExpenses = currentMonthExpenses.filter(
+      (tx, index, self) => index === self.findIndex((t) => t.hash === tx.hash),
+    );
 
     const categorySpending: { [key: string]: number } = {};
 
-    currentMonthExpenses.forEach((tx) => {
+    uniqueExpenses.forEach((tx) => {
       const category = tx.autoCategory;
       if (!categorySpending[category]) {
         categorySpending[category] = 0;
@@ -211,7 +328,7 @@ export class CSVExporter {
 
     const summaryContent = JSON.stringify(
       {
-        month: currentMonth,
+        month: "2026-04-16 to 2026-05-15",
         generatedAt: new Date().toISOString(),
         summary,
         totalBudget: summary.reduce((sum, item) => sum + item.budget, 0),
