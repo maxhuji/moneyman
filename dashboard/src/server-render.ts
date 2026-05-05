@@ -4,7 +4,7 @@ import * as path from "path";
 import { CSVExporter } from "./csv-exporter";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = parseInt(process.env.PORT || "10000", 10);
 
 // Configuration from environment variables
 const config = {
@@ -96,7 +96,7 @@ app.post("/api/refresh", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Dashboard server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Dashboard server running on port ${PORT}`);
   console.log("Data will be fetched from Google Sheets on first request");
 });
