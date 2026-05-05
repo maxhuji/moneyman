@@ -1,8 +1,33 @@
 import { Page } from "puppeteer";
-import { createLogger, logToMetadataFile } from "../utils/logger.js";
+import { createLogger } from "../utils/logger.js";
 import { sleep } from "../utils/utils.js";
 
 const logger = createLogger("cloudflare-solver");
+
+/**
+ * Detects if a response/error contains Cloudflare block patterns.
+ * Common patterns include:
+ * - "Attention Required! | Cloudflare"
+ * - "Sorry, you have been blocked"
+ * - "Please enable cookies" (Cloudflare challenge)
+ * - "Ray ID:" (Cloudflare error identifier)
+ */
+export function isCloudflareBlock(text: string): boolean {
+  if (!text || typeof text !== "string") {
+    return false;
+  }
+
+  const cloudflarePatterns = [
+    /Attention Required[\s\S]*Cloudflare/i,
+    /Sorry, you have been blocked/i,
+    /Please enable cookies[\s\S]*cloudflare/i,
+    /Ray ID:/i,
+    /cloudflare[\s\S]*security/i,
+    /cf-error-details/i,
+  ];
+
+  return cloudflarePatterns.some((pattern) => pattern.test(text));
+}
 
 type Point = [number, number];
 
@@ -52,11 +77,10 @@ export async function solveTurnstile(page: Page): Promise<string> {
   try {
     const windowWidth = await page.evaluate(() => window.innerWidth);
     const windowHeight = await page.evaluate(() => window.innerHeight);
-    logger("Window size", { windowWidth, windowHeight });
-    logToMetadataFile("Solving turnstile");
+    logger("Solving turnstile, Window size", { windowWidth, windowHeight });
 
     page.on("close", () => {
-      logToMetadataFile("Page closed");
+      logger("Page closed");
     });
 
     let currentPosition: Point = [0, 0];
@@ -65,7 +89,7 @@ export async function solveTurnstile(page: Page): Promise<string> {
       containerLocation.y + Math.random() * 12 + 5,
     ]);
 
-    logToMetadataFile("Mouse moved to random position");
+    logger("Mouse moved to random position");
     await sleep(1500);
 
     const { x, y, width, height } = checkboxBox;
@@ -75,7 +99,7 @@ export async function solveTurnstile(page: Page): Promise<string> {
     ]);
 
     await page.mouse.click(...currentPosition);
-    logToMetadataFile("Clicked on checkbox");
+    logger("Clicked on checkbox");
     await page.waitForNavigation({ timeout: 60_000 });
     return "success";
   } catch (error) {

@@ -17,7 +17,13 @@
     "localJson": {
       "enabled": true,
     },
-    // Other options: googleSheets, ynab, azure, buxfer, actual, webPost
+    // Telegram storage - sends transaction files to your Telegram chat
+    // Requires options.notifications.telegram to be configured
+    // Defaults to enabled when Telegram notifications are set up
+    // "telegram": {
+    //   "enabled": true
+    // },
+    // Other options: googleSheets, ynab, azure, buxfer, actual, webPost, sql
   },
   "options": {
     "scraping": {
@@ -26,10 +32,14 @@
       // Number of future months to scrape (default: 1)
       // "futureMonths": 1,
       // Maximum number of parallel scrapers (default: 1)
-      // "maxParallelScrapers": 1
+      // "maxParallelScrapers": 1,
+      // Include raw transaction data for debugging purposes (default: false)
+      // "includeRawTransaction": false
     },
     "logging": {
+      // URL to fetch external IP information, or false to disable
       // "getIpInfoUrl": "https://ipinfo.io/json"
+      // "getIpInfoUrl": false
     },
     "security": {
       // Block domains by default (default: false)
@@ -39,7 +49,11 @@
       // Telegram notifications
       // "telegram": {
       //   "apiKey": "your-telegram-api-key",
-      //   "chatId": "your-chat-id"
+      //   "chatId": "your-chat-id",
+      //   // Enable OTP (One-Time Password) support for 2FA authentication (default: false)
+      //   "enableOtp": false,
+      //   // Maximum time in seconds to wait for OTP response (default: 300)
+      //   "otpTimeoutSeconds": 300
       // }
     },
   },

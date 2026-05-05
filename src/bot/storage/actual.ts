@@ -1,6 +1,6 @@
 import * as actualApi from "@actual-app/api";
 import { ImportTransactionEntity } from "@actual-app/api/@types/loot-core/src/types/models/index.js";
-import hash from "hash-it";
+import { hash } from "hash-it";
 import { TransactionStatuses } from "israeli-bank-scrapers/lib/transactions.js";
 import assert from "node:assert";
 import fs from "node:fs/promises";
@@ -14,8 +14,8 @@ import { createSaveStats, SaveStats } from "../saveStats.js";
 const logger = createLogger("ActualBudgetStorage");
 
 export class ActualBudgetStorage implements TransactionStorage {
-  private bankToActualAccountMap: Map<string, string>;
-  private accountIdToNameMap: Map<string, string>;
+  private bankToActualAccountMap = new Map<string, string>();
+  private accountIdToNameMap = new Map<string, string>();
 
   constructor(private config: MoneymanConfig) {}
 
@@ -132,9 +132,8 @@ export class ActualBudgetStorage implements TransactionStorage {
         logger("Warning: transactionHashType should be set to 'moneyman'");
       }
     } catch (error) {
-      throw new Error(
-        `Failed to send transactions to Actual: ${error instanceof Error ? error.message : error}`,
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to send transactions to Actual: ${message}`);
     }
   }
 

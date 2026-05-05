@@ -15,6 +15,7 @@ logToPublicLog(
   bot
     ? "Telegram logger initialized, status and errors will be sent"
     : "No Telegram bot info, status and errors will not be sent",
+  logger,
 );
 
 logger(`Telegram bot initialized: ${Boolean(bot)}`);
@@ -31,8 +32,25 @@ if (bot && telegramConfig) {
 
 export async function send(message: string, parseMode?: "HTML") {
   if (message.length > 4096) {
-    send(`Next message is too long (${message.length} characters), truncating`);
-    return send(message.slice(0, 4096));
+    await send(
+      `Next message is too long (${message.length} characters), truncating`,
+    );
+    await send(message.slice(0, 4096));
+
+    if (bot && telegramConfig?.chatId) {
+      const buffer = Buffer.from(message, "utf-8");
+      await bot.telegram.sendDocument(
+        telegramConfig.chatId,
+        {
+          source: buffer,
+          filename: `message-${new Date().toISOString().replaceAll(":", "-")}.txt`,
+        },
+        {
+          caption: "Full message attached",
+        },
+      );
+    }
+    return;
   }
   logger(message);
   if (!bot || !telegramConfig?.chatId) {
@@ -82,6 +100,18 @@ export async function sendJSON(json: {}, filename: string) {
   });
 }
 
+export async function sendTextFile(filePath: string, caption?: string) {
+  logger(`Sending file`, { filePath, caption });
+  if (!bot || !telegramConfig?.chatId) {
+    return;
+  }
+  return await bot.telegram.sendDocument(
+    telegramConfig.chatId,
+    { source: filePath, filename: `${filePath}.txt` },
+    caption ? { caption } : undefined,
+  );
+}
+
 export async function editMessage(
   message: number | undefined,
   newText: string,
@@ -116,7 +146,7 @@ export async function editMessage(
   }
 }
 
-function canIgnoreTelegramError(e: Error) {
+function canIgnoreTelegramError(e: unknown) {
   return (
     e instanceof TelegramError &&
     e.response.description.startsWith("Bad Request: message is not modified")

@@ -1,28 +1,10 @@
 name: Create and publish a Docker image
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "src/**"
-      - "patches/**"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - ".eslintrc.js"
-      - ".prettierrc.js"
-      - "Dockerfile"
-      - "docker-compose.yml"
-      - ".github/workflows/build.yml"
+  schedule:
+    # Bi-daily at 06:00 and 18:00 UTC
+    - cron: "0 6,18 * * *"
   workflow_dispatch:
-
-# Debounce mechanism: combines concurrency control with delay to group multiple PRs
-# - Only one build runs at a time for the main branch
-# - If a new push occurs during the 10-minute delay, the current run is cancelled
-# - This results in grouping multiple merged PRs into a single release
-concurrency:
-  group: build-${{ github.ref_name }}
-  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -35,53 +17,118 @@ jobs:
       packages: write
 
     steps:
-      - name: Debounce - Wait for potential new commits
-        run: |
-          echo "⏱️  Waiting 10 minutes to debounce multiple pushes to main..."
-          echo "If new commits are pushed during this time, this run will be cancelled."
-          sleep 10m
-
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check if release needed
+        id: check
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(gh release view --json tagName --jq '.tagName' 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No existing releases found, proceeding with build"
+            echo "needed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get the commit SHA of the latest release tag
+          RELEASE_SHA=$(git rev-list -n 1 "$LATEST_TAG" 2>/dev/null || echo "")
+          HEAD_SHA=$(git rev-parse HEAD)
+
+          echo "Latest release: $LATEST_TAG (commit: ${RELEASE_SHA:0:7})"
+          echo "Current HEAD: ${HEAD_SHA:0:7}"
+
+          if [ "$RELEASE_SHA" = "$HEAD_SHA" ]; then
+            echo "✅ HEAD is already released as $LATEST_TAG, skipping build"
+            echo "needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "🆕 New commits since $LATEST_TAG, proceeding with build"
+            echo "needed=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - id: normalize-repository-name
+        if: steps.check.outputs.needed == 'true'
         run: echo "repository=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
+      - name: Generate CalVer version
+        if: steps.check.outputs.needed == 'true'
+        id: version
+        run: |
+          # Generate date-based version (CalVer: YYYY.MM.DD)
+          TODAY=$(date -u +%Y.%m.%d)
+
+          # Count existing releases with today's date prefix to determine sequence number
+          # Use JSON output and jq to reliably count matching tags
+          EXISTING_COUNT=$(gh release list --json tagName --jq "[.[] | select(.tagName | startswith(\"v${TODAY}.\"))] | length")
+
+          # Handle empty result
+          if [ -z "$EXISTING_COUNT" ]; then
+            EXISTING_COUNT=0
+          fi
+
+          SEQUENCE=$((EXISTING_COUNT + 1))
+
+          # Create version tag (e.g., v2025.12.02.1)
+          VERSION="v${TODAY}.${SEQUENCE}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "📦 Generated version: ${VERSION} (commit: ${SHORT_SHA})"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        if: steps.check.outputs.needed == 'true'
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata and set tags
+        if: steps.check.outputs.needed == 'true'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ steps.normalize-repository-name.outputs.repository }}
           tags: |
             type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}
             type=sha,format=short
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        if: steps.check.outputs.needed == 'true'
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          sbom: false
 
       - name: Create Release
+        if: steps.check.outputs.needed == 'true'
         run: |
-          gh release create sha-${{ github.sha }} \
-            --title "Release sha-${{ github.sha }}" \
+          gh release create ${{ steps.version.outputs.version }} \
+            --title "Release ${{ steps.version.outputs.version }}" \
             --notes "🐳 Docker image published to GitHub Container Registry
 
-          **Image:** \`${{ env.REGISTRY }}/${{ github.repository }}:sha-${{ github.sha }}\`
-          **Tag:** \`sha-${{ github.sha }}\`
-          **Commit:** ${{ github.sha }}
+          **Version:** \`${{ steps.version.outputs.version }}\`
+          **Image:** \`${{ env.REGISTRY }}/${{ steps.normalize-repository-name.outputs.repository }}:${{ steps.version.outputs.version }}\`
+          **Commit:** [${{ steps.version.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
 
-          Pull with: \`docker pull ${{ env.REGISTRY }}/${{ steps.normalize-repository-name.outputs.repository }}:sha-${{ github.sha }}\`" \
+          Pull with:
+          \`\`\`bash
+          docker pull ${{ env.REGISTRY }}/${{ steps.normalize-repository-name.outputs.repository }}:${{ steps.version.outputs.version }}
+          # or use 'latest' for the most recent version
+          docker pull ${{ env.REGISTRY }}/${{ steps.normalize-repository-name.outputs.repository }}:latest
+          \`\`\`" \
             --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
