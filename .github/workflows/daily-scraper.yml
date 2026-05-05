@@ -1,0 +1,81 @@
+name: Daily Transaction Scraper
+
+on:
+  schedule:
+    # Run at 6:00 AM and 6:00 PM UTC (8-9 AM and 8-9 PM Israel time depending on DST)
+    - cron: "0 6,18 * * *"
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Puppeteer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxkbcommon0 \
+            libgbm1 \
+            libasound2 \
+            libxrandr2 \
+            libpangocairo-1.0-0 \
+            libgtk-3-0
+
+      - name: Create config file
+        run: |
+          cat > moneyman.conf.jsonc << 'EOF'
+          {
+            "accounts": ${{ secrets.ACCOUNTS_JSON }},
+            "storage": {
+              "googleSheets": {
+                "serviceAccountPrivateKey": "${{ secrets.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY }}",
+                "serviceAccountEmail": "${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}",
+                "sheetId": "${{ secrets.GOOGLE_SHEET_ID }}",
+                "worksheetName": "${{ secrets.WORKSHEET_NAME }}"
+              }
+            },
+            "options": {
+              "scraping": {
+                "daysBack": 125,
+                "transactionHashType": "moneyman",
+                "hiddenDeprecations": ["transactionHashType"]
+              },
+              "notifications": {
+                "telegram": {
+                  "apiKey": "${{ secrets.TELEGRAM_API_KEY }}",
+                  "chatId": "${{ secrets.TELEGRAM_CHAT_ID }}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Build
+        run: npm run build
+
+      - name: Run scraper
+        run: npm start
+        env:
+          NODE_ENV: production
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Scraper failed. Check the logs above for details."
