@@ -1,0 +1,37 @@
+{
+  "categories": {
+    "groceries": {
+      "budget": 3000,
+      "keywords": ["שופרסל", "רמי לוי", "יינות ביתן", "מחסני השוק", "mega", "shufersal", "rami levy"]
+    },
+    "restaurants": {
+      "budget": 1500,
+      "keywords": ["מסעדה", "קפה", "בית קפה", "פיצה", "המבורגר", "restaurant", "cafe", "coffee", "pizza"]
+    },
+    "transportation": {
+      "budget": 800,
+      "keywords": ["דלק", "פז", "סונול", "תן ביס", "ten bis", "fuel", "gas", "parking", "חניה"]
+    },
+    "utilities": {
+      "budget": 1200,
+      "keywords": ["חשמל", "מים", "ארנונה", "electricity", "water", "municipal", "hot", "cellcom", "partner", "פרטנר"]
+    },
+    "shopping": {
+      "budget": 2000,
+      "keywords": ["זארה", "h&m", "אייסוקס", "גולף", "קסטרו", "fox", "זארה", "terminal x", "איקאה"]
+    },
+    "healthcare": {
+      "budget": 500,
+      "keywords": ["סופר פארם", "ניו פארם", "pharmacy", "רופא", "doctor", "קופת חולים"]
+    },
+    "entertainment": {
+      "budget": 600,
+      "keywords": ["yes", "נטפליקס", "netflix", "spotify", "סינמה", "cinema", "rav kav", "רב קו"]
+    },
+    "other": {
+      "budget": 1000,
+      "keywords": []
+    }
+  },
+  "defaultCategory": "other"
+}

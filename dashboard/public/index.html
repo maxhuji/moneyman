@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Household Budget Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        .category-percent {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+        }
+
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+        }
+
+        .category-amounts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .amount-spent {
+            font-weight: 600;
+        }
+
+        .amount-budget {
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 50px;
+        }
+
+        .error {
+            background: #f44336;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Household Budget Dashboard</h1>
+            <div class="subtitle">Track your monthly expenses</div>
+        </div>
+
+        <div id="error-message"></div>
+        <div id="loading" class="loading">Loading budget data...</div>
+        <div id="content" style="display: none;">
+            <div class="summary-card">
+                <div class="summary-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Monthly Budget</div>
+                        <div class="stat-value" id="total-budget">₪0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Total Spent</div>
+                        <div class="stat-value" id="total-spent">₪0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Remaining</div>
+                        <div class="stat-value" id="total-remaining">₪0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Budget Used</div>
+                        <div class="stat-value" id="total-percent">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="categories-grid" id="categories"></div>
+
+            <div class="last-updated">
+                Last updated: <span id="last-updated-time"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(amount) {
+            return `₪${Math.round(amount).toLocaleString()}`;
+        }
+
+        function getProgressColor(percent) {
+            if (percent > 90) return 'danger';
+            if (percent > 75) return 'warning';
+            return '';
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/budget-summary');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load budget data. Make sure to run the data export first.');
+                }
+
+                const data = await response.json();
+
+                // Update summary stats
+                document.getElementById('total-budget').textContent = formatCurrency(data.totalBudget);
+                document.getElementById('total-spent').textContent = formatCurrency(data.totalSpent);
+                document.getElementById('total-remaining').textContent = formatCurrency(data.totalBudget - data.totalSpent);
+
+                const totalPercent = Math.round((data.totalSpent / data.totalBudget) * 100);
+                document.getElementById('total-percent').textContent = `${totalPercent}%`;
+
+                // Update last updated time
+                const lastUpdated = new Date(data.generatedAt);
+                document.getElementById('last-updated-time').textContent = lastUpdated.toLocaleString();
+
+                // Render categories
+                const categoriesContainer = document.getElementById('categories');
+                categoriesContainer.innerHTML = '';
+
+                data.summary.sort((a, b) => b.spent - a.spent).forEach(category => {
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+
+                    const progressColor = getProgressColor(category.percentUsed);
+
+                    card.innerHTML = `
+                        <div class="category-header">
+                            <div class="category-name">${category.category}</div>
+                            <div class="category-percent" style="color: ${category.percentUsed > 90 ? '#f44336' : category.percentUsed > 75 ? '#ff9800' : '#4caf50'}">${category.percentUsed}%</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressColor}" style="width: ${Math.min(category.percentUsed, 100)}%"></div>
+                        </div>
+                        <div class="category-amounts">
+                            <span class="amount-spent">${formatCurrency(category.spent)} spent</span>
+                            <span class="amount-budget">of ${formatCurrency(category.budget)}</span>
+                        </div>
+                    `;
+
+                    categoriesContainer.appendChild(card);
+                });
+
+                // Hide loading, show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadDashboard, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
