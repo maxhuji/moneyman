@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:render": "node dist/server-render.js",
     "dev": "ts-node src/index.ts",
     "export": "npm run build && npm run start",
     "dashboard": "node dist/server.js"

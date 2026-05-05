@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: dashboard
     buildCommand: npm install && npm run build
-    startCommand: node dist/server-render.js
+    startCommand: npm run start:render
     envVars:
       - key: NODE_ENV
         value: production
