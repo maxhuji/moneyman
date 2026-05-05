@@ -4,8 +4,9 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: cd dashboard && npm install && npm run build
-    startCommand: cd dashboard && node dist/server-render.js
+    rootDir: dashboard
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server-render.js
     envVars:
       - key: NODE_ENV
         value: production
