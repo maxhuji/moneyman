@@ -231,9 +231,15 @@ export class CSVExporter {
       );
     });
 
-    // Deduplicate transactions by hash
+    // Deduplicate transactions by hash AND identifier (some transactions have same identifier but different dates)
     const uniqueExpenses = currentMonthExpenses.filter(
-      (tx, index, self) => index === self.findIndex((t) => t.hash === tx.hash),
+      (tx, index, self) =>
+        index ===
+        self.findIndex(
+          (t) =>
+            t.hash === tx.hash ||
+            (t.identifier && tx.identifier && t.identifier === tx.identifier),
+        ),
     );
 
     const categorySpending: { [key: string]: number } = {};
@@ -294,9 +300,15 @@ export class CSVExporter {
       );
     });
 
-    // Deduplicate transactions by hash
+    // Deduplicate transactions by hash AND identifier (some transactions have same identifier but different dates)
     const uniqueExpenses = currentMonthExpenses.filter(
-      (tx, index, self) => index === self.findIndex((t) => t.hash === tx.hash),
+      (tx, index, self) =>
+        index ===
+        self.findIndex(
+          (t) =>
+            t.hash === tx.hash ||
+            (t.identifier && tx.identifier && t.identifier === tx.identifier),
+        ),
     );
 
     const categorySpending: { [key: string]: number } = {};
