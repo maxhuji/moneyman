@@ -57,7 +57,7 @@ jobs:
             },
             "options": {
               "scraping": {
-                "daysBack": 125,
+                "daysBack": 7,
                 "transactionHashType": "moneyman",
                 "hiddenDeprecations": ["transactionHashType"]
               },
