@@ -1,7 +1,7 @@
 {
   "categories": {
     "groceries": {
-      "budget": 4200,
+      "budget": 3000,
       "displayName": "מזון וצריכה",
       "maxCategories": ["מזון וצריכה"],
       "keywords": [
@@ -17,7 +17,7 @@
       ]
     },
     "restaurants": {
-      "budget": 1500,
+      "budget": 1000,
       "displayName": "מסעדות וקפה",
       "maxCategories": ["מסעדות, קפה וברים", "מסעדות"],
       "keywords": [
@@ -32,7 +32,7 @@
       ]
     },
     "transportation": {
-      "budget": 1100,
+      "budget": 1000,
       "displayName": "תחבורה ודלק",
       "maxCategories": ["תחבורה ורכבים", "דלק, חשמל וגז"],
       "keywords": [
@@ -44,31 +44,43 @@
         "fuel",
         "gas",
         "parking",
-        "חניה"
+        "חניה",
+        "רכב",
+        "ביטוח רכב",
+        "AIG"
+      ]
+    },
+    "housing": {
+      "budget": 7000,
+      "displayName": "דיור",
+      "maxCategories": ["עירייה וממשלה"],
+      "keywords": [
+        "מיכל נאמן",
+        "ארנונה",
+        "ועד בית פרוג",
+        "rent",
+        "שכירות"
       ]
     },
     "utilities": {
       "budget": 300,
-      "displayName": "תקשורת ושירותים",
+      "displayName": "תקשורת וחשמל",
       "maxCategories": ["שירותי תקשורת"],
       "keywords": [
         "חשמל",
         "מים",
-        "ארנונה",
         "electricity",
         "water",
-        "municipal",
         "hot",
         "cellcom",
         "partner",
         "פרטנר",
         "פלאפון",
-        "ועד בית פרוג",
         "הבאר השלישית"
       ]
     },
     "shopping": {
-      "budget": 850,
+      "budget": 200,
       "displayName": "קניות ואופנה",
       "maxCategories": [
         "אופנה",
@@ -91,7 +103,7 @@
       ]
     },
     "healthcare": {
-      "budget": 1550,
+      "budget": 500,
       "displayName": "בריאות ורפואה",
       "maxCategories": ["רפואה ובתי מרקחת"],
       "keywords": [
@@ -120,13 +132,13 @@
       ]
     },
     "insurance": {
-      "budget": 1700,
+      "budget": 1000,
       "displayName": "ביטוח",
       "maxCategories": ["ביטוח"],
       "keywords": ["ביטוח", "insurance", "הראל", "מנורה"]
     },
     "travel": {
-      "budget": 2000,
+      "budget": 500,
       "displayName": "טיסות ותיירות",
       "maxCategories": ["טיסות ותיירות"],
       "keywords": ["טיסה", "flight", "hotel", "מלון"]
@@ -150,7 +162,7 @@
       ]
     },
     "other": {
-      "budget": 0,
+      "budget": 500,
       "displayName": "שונות",
       "maxCategories": ["שונות", "העברת כספים", "עירייה וממשלה", "משיכת מזומן"],
       "keywords": []
