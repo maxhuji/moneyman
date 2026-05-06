@@ -1,7 +1,7 @@
 {
   "categories": {
     "groceries": {
-      "budget": 3000,
+      "budget": 2400,
       "displayName": "מזון וצריכה",
       "maxCategories": ["מזון וצריכה"],
       "keywords": [
@@ -17,7 +17,7 @@
       ]
     },
     "restaurants": {
-      "budget": 1000,
+      "budget": 700,
       "displayName": "מסעדות וקפה",
       "maxCategories": ["מסעדות, קפה וברים", "מסעדות"],
       "keywords": [
@@ -32,7 +32,7 @@
       ]
     },
     "transportation": {
-      "budget": 1000,
+      "budget": 700,
       "displayName": "תחבורה ודלק",
       "maxCategories": ["תחבורה ורכבים", "דלק, חשמל וגז"],
       "keywords": [
@@ -63,7 +63,7 @@
       ]
     },
     "utilities": {
-      "budget": 300,
+      "budget": 200,
       "displayName": "תקשורת וחשמל",
       "maxCategories": ["שירותי תקשורת"],
       "keywords": [
@@ -80,7 +80,7 @@
       ]
     },
     "shopping": {
-      "budget": 200,
+      "budget": 100,
       "displayName": "קניות ואופנה",
       "maxCategories": [
         "אופנה",
@@ -103,7 +103,7 @@
       ]
     },
     "healthcare": {
-      "budget": 500,
+      "budget": 300,
       "displayName": "בריאות ורפואה",
       "maxCategories": ["רפואה ובתי מרקחת"],
       "keywords": [
@@ -118,7 +118,7 @@
       ]
     },
     "entertainment": {
-      "budget": 300,
+      "budget": 200,
       "displayName": "בידור ופנאי",
       "maxCategories": ["פנאי, בידור וספורט"],
       "keywords": [
@@ -138,7 +138,7 @@
       "keywords": ["ביטוח", "insurance", "הראל", "מנורה"]
     },
     "travel": {
-      "budget": 500,
+      "budget": 300,
       "displayName": "טיסות ותיירות",
       "maxCategories": ["טיסות ותיירות"],
       "keywords": ["טיסה", "flight", "hotel", "מלון"]
@@ -162,7 +162,7 @@
       ]
     },
     "other": {
-      "budget": 500,
+      "budget": 100,
       "displayName": "שונות",
       "maxCategories": ["שונות", "העברת כספים", "עירייה וממשלה", "משיכת מזומן"],
       "keywords": []
