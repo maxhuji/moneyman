@@ -75,7 +75,7 @@ jobs:
         run: npm run build
 
       - name: Run scraper
-        run: npm start
+        run: node --import ./polyfill.js dst/index.js
         env:
           NODE_ENV: production
 
