@@ -25,6 +25,10 @@ interface BudgetConfig {
       displayName?: string;
       maxCategories?: string[];
       keywords: string[];
+      amountRules?: Array<{
+        keywords: string[];
+        amounts: number[];
+      }>;
     };
   };
   defaultCategory: string;
@@ -57,8 +61,33 @@ export class CSVExporter {
     maxCategory: string,
     description: string,
     memo: string,
+    amount?: number,
   ): string {
-    // First, try to map using the Max category column
+    const searchText = `${description} ${memo}`.toLowerCase();
+
+    // First, check amount-based rules (highest priority)
+    if (amount !== undefined) {
+      for (const [category, config] of Object.entries(
+        this.budgetConfig.categories,
+      )) {
+        if (!config.amountRules) continue;
+
+        for (const rule of config.amountRules) {
+          const hasKeyword = rule.keywords.some((keyword) =>
+            searchText.includes(keyword.toLowerCase()),
+          );
+          const matchesAmount = rule.amounts.some(
+            (ruleAmount) => Math.abs(Math.abs(amount) - ruleAmount) < 1,
+          );
+
+          if (hasKeyword && matchesAmount) {
+            return category;
+          }
+        }
+      }
+    }
+
+    // Second, try to map using the Max category column
     if (maxCategory) {
       for (const [category, config] of Object.entries(
         this.budgetConfig.categories,
@@ -72,9 +101,7 @@ export class CSVExporter {
       }
     }
 
-    // Fallback to keyword matching in description/memo
-    const searchText = `${description} ${memo}`.toLowerCase();
-
+    // Third, fallback to keyword matching in description/memo
     for (const [category, config] of Object.entries(
       this.budgetConfig.categories,
     )) {
@@ -135,6 +162,7 @@ export class CSVExporter {
         tx.category,
         tx.description,
         tx.memo,
+        tx.amount,
       ),
     }));
 

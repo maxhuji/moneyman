@@ -62,7 +62,9 @@
         "cellcom",
         "partner",
         "פרטנר",
-        "פלאפון"
+        "פלאפון",
+        "ועד בית פרוג",
+        "הבאר השלישית"
       ]
     },
     "shopping": {
@@ -129,8 +131,26 @@
       "maxCategories": ["טיסות ותיירות"],
       "keywords": ["טיסה", "flight", "hotel", "מלון"]
     },
+    "education": {
+      "budget": 1700,
+      "displayName": "חינוך",
+      "maxCategories": [],
+      "keywords": ["רשת חוויות רחובות"]
+    },
+    "therapy": {
+      "budget": 2400,
+      "displayName": "טיפול",
+      "maxCategories": [],
+      "keywords": [],
+      "amountRules": [
+        {
+          "keywords": ["BIT", "PAYPOX"],
+          "amounts": [280, 300]
+        }
+      ]
+    },
     "other": {
-      "budget": 1500,
+      "budget": 0,
       "displayName": "שונות",
       "maxCategories": ["שונות", "העברת כספים", "עירייה וממשלה", "משיכת מזומן"],
       "keywords": []
