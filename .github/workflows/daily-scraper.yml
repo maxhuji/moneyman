@@ -22,8 +22,16 @@ jobs:
 
       - name: Restore package files
         run: |
-          mv package.json.scraper package.json
-          mv package-lock.json.scraper package-lock.json
+          ls -la package*.* || echo "No package files found"
+          if [ -f package.json.scraper ]; then
+            cp package.json.scraper package.json
+            echo "✓ Copied package.json"
+          fi
+          if [ -f package-lock.json.scraper ]; then
+            cp package-lock.json.scraper package-lock.json
+            echo "✓ Copied package-lock.json"
+          fi
+          ls -la package*.json || echo "No package.json files after copy"
 
       - name: Install dependencies
         run: npm ci
