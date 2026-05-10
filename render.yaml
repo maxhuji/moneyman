@@ -19,3 +19,5 @@ services:
         sync: false
       - key: WORKSHEET_NAME
         value: Moneyman
+      - key: DASHBOARD_PASSWORD
+        sync: false

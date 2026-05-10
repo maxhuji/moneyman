@@ -14,6 +14,7 @@ const config = {
   sheetId: process.env.GOOGLE_SHEET_ID!,
   worksheetName: process.env.WORKSHEET_NAME || "Moneyman",
   budgetConfigPath: path.join(__dirname, "../budget-config.json"),
+  dashboardPassword: process.env.DASHBOARD_PASSWORD || "moneyman2026",
 };
 
 let cachedData: { summary: any; transactions: any[] } | null = null;
@@ -22,6 +23,30 @@ const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 app.use(cors());
 app.use(express.json());
+
+// Basic authentication middleware
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Basic ")) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Moneyman Dashboard"');
+    return res.status(401).send("Authentication required");
+  }
+
+  const base64Credentials = authHeader.split(" ")[1];
+  const credentials = Buffer.from(base64Credentials, "base64").toString(
+    "ascii",
+  );
+  const [username, password] = credentials.split(":");
+
+  if (password !== config.dashboardPassword) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Moneyman Dashboard"');
+    return res.status(401).send("Invalid credentials");
+  }
+
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 
 async function fetchData() {
