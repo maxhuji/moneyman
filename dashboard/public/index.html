@@ -720,25 +720,13 @@
           );
           const transactions = await response.json();
 
-          // Filter by billing period, expenses only, remove duplicates, and sort by date
-          // Backend already filters out internal transfers and excluded transactions
-          const expenses = transactions
-            .filter((tx) => parseFloat(tx.amount) < 0)
-            .filter((tx) => isInBillingPeriod(tx.date))
-            .filter(
-              (tx, index, self) =>
-                index ===
-                self.findIndex(
-                  (t) =>
-                    t.hash === tx.hash ||
-                    (t.identifier && tx.identifier && t.identifier === tx.identifier),
-                ),
-            )
-            .sort((a, b) => {
-              const dateA = parseDate(a.date);
-              const dateB = parseDate(b.date);
-              return dateB - dateA;
-            });
+          // Backend already filters by date, category, deduplicates, and excludes internal transfers
+          // Just sort by date here
+          const expenses = transactions.sort((a, b) => {
+            const dateA = parseDate(a.date);
+            const dateB = parseDate(b.date);
+            return dateB - dateA;
+          });
 
           if (expenses.length === 0) {
             transactionsList.innerHTML =
@@ -844,25 +832,13 @@
             return;
           }
 
-          // Filter by billing period, expenses only, remove duplicates, and sort by date
-          // Backend already filters out internal transfers and excluded transactions
-          const expenses = transactions
-            .filter((tx) => parseFloat(tx.amount) < 0)
-            .filter((tx) => isInBillingPeriod(tx.date))
-            .filter(
-              (tx, index, self) =>
-                index ===
-                self.findIndex(
-                  (t) =>
-                    t.hash === tx.hash ||
-                    (t.identifier && tx.identifier && t.identifier === tx.identifier),
-                ),
-            )
-            .sort((a, b) => {
-              const dateA = parseDate(a.date);
-              const dateB = parseDate(b.date);
-              return dateB - dateA;
-            });
+          // Backend already filters by date, category, deduplicates, and excludes internal transfers
+          // Just sort by date here
+          const expenses = transactions.sort((a, b) => {
+            const dateA = parseDate(a.date);
+            const dateB = parseDate(b.date);
+            return dateB - dateA;
+          });
 
           if (expenses.length === 0) {
             transactionsList.innerHTML =

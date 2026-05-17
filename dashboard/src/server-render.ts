@@ -108,10 +108,54 @@ app.get("/api/transactions/:category", async (req, res) => {
     const { category } = req.params;
     const offsetMonths = parseInt(req.query.offset as string) || 0;
     const data = await fetchData(offsetMonths);
-    const filtered = data.transactions.filter(
-      (tx: any) => tx.autoCategory === category,
+
+    // Helper function to parse Israeli date format
+    function parseIsraeliDate(dateStr: string): Date {
+      const [day, month, year] = dateStr.split("/").map((n) => parseInt(n, 10));
+      return new Date(year, month - 1, day);
+    }
+
+    const startDate = new Date(data.summary.startDate);
+    const endDate = new Date(data.summary.endDate);
+
+    // Filter by category, date range, negative amounts only, and apply same filters as budget calculation
+    const filtered = data.transactions.filter((tx: any) => {
+      const txDate = parseIsraeliDate(tx.date);
+      const isManuallyExcluded = tx.excluded === "true" || tx.excluded === "1";
+      const isInternalTransfer =
+        tx.description.includes("חיוב לכרטיס") ||
+        tx.description.includes("מקס איט פי חיוב") ||
+        tx.description.includes("העברה לגולדפלד רינה") ||
+        tx.description.includes("העברה ל גולדפלד") ||
+        tx.description.includes("הע. לרינה קארין") ||
+        tx.description.includes("הע. לבעית ברחובות") ||
+        tx.description.includes("הע. לבטיה כהן") ||
+        tx.description.includes("העברה לאוברבק מקסימיליאן") ||
+        tx.description.includes("מש' מכספומט") ||
+        tx.description.includes("כספומט");
+
+      return (
+        tx.autoCategory === category &&
+        txDate >= startDate &&
+        txDate <= endDate &&
+        tx.amount < 0 &&
+        !isInternalTransfer &&
+        !isManuallyExcluded
+      );
+    });
+
+    // Deduplicate by hash and identifier
+    const deduplicated = filtered.filter(
+      (tx: any, index: number, self: any[]) =>
+        index ===
+        self.findIndex(
+          (t: any) =>
+            t.hash === tx.hash ||
+            (t.identifier && tx.identifier && t.identifier === tx.identifier),
+        ),
     );
-    res.json(filtered);
+
+    res.json(deduplicated);
   } catch (error) {
     console.error("Error fetching transactions:", error);
     res.status(500).json({ error: "Failed to fetch transactions" });
