@@ -1076,11 +1076,16 @@
 
         const categorySelect = document.getElementById("edit-category");
         const excludedCheckbox = document.getElementById("edit-excluded");
+        const saveBtn = event.target;
 
         const updates = {
           manualCategory: categorySelect.value || null,
           excluded: excludedCheckbox.checked,
         };
+
+        // Disable button and show loading
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
 
         try {
           const response = await fetch(`/api/transactions/${currentEditTransaction.hash}`, {
@@ -1095,15 +1100,15 @@
             throw new Error("Failed to update transaction");
           }
 
-          // Close modal and refresh data
+          // Close both modals and refresh data
           closeEditModal();
+          closeModal();
           await loadDashboard();
-
-          // Show success message
-          alert("Transaction updated successfully!");
         } catch (error) {
           console.error("Error updating transaction:", error);
           alert("Failed to update transaction. Please try again.");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save";
         }
       }
 
