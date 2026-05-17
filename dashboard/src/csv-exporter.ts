@@ -16,6 +16,8 @@ interface Transaction {
   "scraped by": string;
   identifier: string;
   chargedCurrency?: string;
+  manualCategory?: string;
+  excluded?: string;
 }
 
 interface BudgetConfig {
@@ -150,15 +152,17 @@ export class CSVExporter {
         "scraped by": row.get("scraped by") || "",
         identifier: row.get("identifier") || "",
         chargedCurrency: row.get("chargedCurrency") || undefined,
+        manualCategory: row.get("manualCategory") || undefined,
+        excluded: row.get("excluded") || undefined,
       };
     });
 
     console.log(`Found ${transactions.length} transactions`);
 
-    // Add auto-categorization
+    // Add auto-categorization (use manual category if set)
     const categorizedTransactions = transactions.map((tx) => ({
       ...tx,
-      autoCategory: this.categorizeTransaction(
+      autoCategory: tx.manualCategory || this.categorizeTransaction(
         tx.category,
         tx.description,
         tx.memo,
@@ -296,9 +300,10 @@ export class CSVExporter {
     const { startDate, endDate } = this.calculateBillingPeriod(offsetMonths);
 
     // Filter transactions from billing period (negative amounts are expenses)
-    // Exclude internal transfers and credit card billings to avoid double-counting
+    // Exclude internal transfers, credit card billings, and manually excluded transactions
     const currentMonthExpenses = transactions.filter((tx) => {
       const txDate = this.parseIsraeliDate(tx.date);
+      const isManuallyExcluded = tx.excluded === "true" || tx.excluded === "1";
       const isInternalTransfer =
         tx.description.includes("חיוב לכרטיס") || // Credit card billing from bank
         tx.description.includes("מקס איט פי חיוב") || // Max IT Pay billing
@@ -314,7 +319,8 @@ export class CSVExporter {
         txDate >= startDate &&
         txDate <= endDate &&
         tx.amount < 0 &&
-        !isInternalTransfer
+        !isInternalTransfer &&
+        !isManuallyExcluded
       );
     });
 
@@ -384,9 +390,10 @@ export class CSVExporter {
     const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
 
     // Filter transactions from billing period (negative amounts are expenses)
-    // Exclude internal transfers and credit card billings to avoid double-counting
+    // Exclude internal transfers, credit card billings, and manually excluded transactions
     const currentMonthExpenses = transactions.filter((tx) => {
       const txDate = this.parseIsraeliDate(tx.date);
+      const isManuallyExcluded = tx.excluded === "true" || tx.excluded === "1";
       const isInternalTransfer =
         tx.description.includes("חיוב לכרטיס") || // Credit card billing from bank
         tx.description.includes("מקס איט פי חיוב") || // Max IT Pay billing
@@ -402,7 +409,8 @@ export class CSVExporter {
         txDate >= startDate &&
         txDate <= endDate &&
         tx.amount < 0 &&
-        !isInternalTransfer
+        !isInternalTransfer &&
+        !isManuallyExcluded
       );
     });
 
@@ -467,5 +475,47 @@ export class CSVExporter {
     // Israeli date format: dd/mm/yyyy
     const [day, month, year] = dateStr.split("/").map((n) => parseInt(n, 10));
     return new Date(year, month - 1, day);
+  }
+
+  async updateTransaction(
+    hash: string,
+    updates: { manualCategory?: string; excluded?: boolean },
+  ): Promise<void> {
+    console.log(`Updating transaction with hash: ${hash}`);
+    await this.doc.loadInfo();
+
+    const sheet = this.doc.sheetsByTitle[this.worksheetName];
+    if (!sheet) {
+      throw new Error(`Worksheet "${this.worksheetName}" not found`);
+    }
+
+    // Ensure the columns exist
+    await sheet.loadHeaderRow();
+    const headers = sheet.headerValues;
+
+    if (!headers.includes("manualCategory")) {
+      await sheet.setHeaderRow([...headers, "manualCategory", "excluded"]);
+    } else if (!headers.includes("excluded")) {
+      await sheet.setHeaderRow([...headers, "excluded"]);
+    }
+
+    // Find the row with matching hash
+    const rows = await sheet.getRows();
+    const row = rows.find((r) => r.get("hash") === hash);
+
+    if (!row) {
+      throw new Error(`Transaction with hash ${hash} not found`);
+    }
+
+    // Update the row
+    if (updates.manualCategory !== undefined) {
+      row.set("manualCategory", updates.manualCategory);
+    }
+    if (updates.excluded !== undefined) {
+      row.set("excluded", updates.excluded ? "true" : "");
+    }
+
+    await row.save();
+    console.log(`Transaction ${hash} updated successfully`);
   }
 }

@@ -130,6 +130,32 @@ app.post("/api/refresh", async (req, res) => {
   }
 });
 
+// Update transaction endpoint
+app.patch("/api/transactions/:hash", async (req, res) => {
+  try {
+    const { hash } = req.params;
+    const { manualCategory, excluded } = req.body;
+
+    const exporter = new CSVExporter(
+      config.serviceAccountEmail,
+      config.serviceAccountPrivateKey,
+      config.sheetId,
+      config.worksheetName,
+      config.budgetConfigPath,
+    );
+
+    await exporter.updateTransaction(hash, { manualCategory, excluded });
+
+    // Clear cache to force refresh
+    cachedData = null;
+
+    res.json({ success: true, message: "Transaction updated successfully" });
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    res.status(500).json({ error: "Failed to update transaction" });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Dashboard server running on port ${PORT}`);
   console.log("Data will be fetched from Google Sheets on first request");
