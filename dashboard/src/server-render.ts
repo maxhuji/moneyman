@@ -49,13 +49,16 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, "../public")));
 
-async function fetchData() {
+async function fetchData(offsetMonths: number = 0) {
   const now = Date.now();
-  if (cachedData && now - lastFetch < CACHE_DURATION) {
+  // Don't cache if looking at different periods
+  if (offsetMonths === 0 && cachedData && now - lastFetch < CACHE_DURATION) {
     return cachedData;
   }
 
-  console.log("Fetching fresh data from Google Sheets...");
+  console.log(
+    `Fetching data from Google Sheets (offset: ${offsetMonths} months)...`,
+  );
   const exporter = new CSVExporter(
     config.serviceAccountEmail,
     config.serviceAccountPrivateKey,
@@ -64,18 +67,22 @@ async function fetchData() {
     config.budgetConfigPath,
   );
 
-  const { transactions, summary } = await exporter.exportInMemory();
+  const { transactions, summary } = await exporter.exportInMemory(offsetMonths);
 
-  cachedData = { summary, transactions };
-  lastFetch = now;
+  // Only cache current period
+  if (offsetMonths === 0) {
+    cachedData = { summary, transactions };
+    lastFetch = now;
+  }
 
-  return cachedData;
+  return { summary, transactions };
 }
 
 // API endpoint to get budget summary
 app.get("/api/budget-summary", async (req, res) => {
   try {
-    const data = await fetchData();
+    const offsetMonths = parseInt(req.query.offset as string) || 0;
+    const data = await fetchData(offsetMonths);
     res.json(data.summary);
   } catch (error) {
     console.error("Error fetching budget summary:", error);
@@ -86,7 +93,8 @@ app.get("/api/budget-summary", async (req, res) => {
 // API endpoint to get all transactions
 app.get("/api/transactions", async (req, res) => {
   try {
-    const data = await fetchData();
+    const offsetMonths = parseInt(req.query.offset as string) || 0;
+    const data = await fetchData(offsetMonths);
     res.json(data.transactions);
   } catch (error) {
     console.error("Error fetching transactions:", error);
@@ -98,7 +106,8 @@ app.get("/api/transactions", async (req, res) => {
 app.get("/api/transactions/:category", async (req, res) => {
   try {
     const { category } = req.params;
-    const data = await fetchData();
+    const offsetMonths = parseInt(req.query.offset as string) || 0;
+    const data = await fetchData(offsetMonths);
     const filtered = data.transactions.filter(
       (tx: any) => tx.autoCategory === category,
     );

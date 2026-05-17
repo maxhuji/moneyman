@@ -230,21 +230,70 @@ export class CSVExporter {
     this.generateBudgetSummary(categorizedTransactions, dataDir, timestamp);
   }
 
-  async exportInMemory(): Promise<{
+  async exportInMemory(
+    offsetMonths: number = 0,
+  ): Promise<{
     transactions: Array<Transaction & { autoCategory: string }>;
     summary: any;
   }> {
     const categorizedTransactions = await this.fetchTransactions();
-    const summary = this.generateBudgetSummaryInMemory(categorizedTransactions);
+    const summary = this.generateBudgetSummaryInMemory(
+      categorizedTransactions,
+      offsetMonths,
+    );
     return { transactions: categorizedTransactions, summary };
+  }
+
+  private calculateBillingPeriod(
+    offsetMonths: number = 0,
+  ): { startDate: Date; endDate: Date } {
+    const today = new Date();
+    const currentDay = today.getDate();
+
+    // Billing period is 16th to 15th
+    let periodMonth = today.getMonth();
+    let periodYear = today.getFullYear();
+
+    // If we're before the 16th, the current period started last month
+    if (currentDay < 16) {
+      periodMonth -= 1;
+      if (periodMonth < 0) {
+        periodMonth = 11;
+        periodYear -= 1;
+      }
+    }
+
+    // Apply offset for viewing previous periods
+    periodMonth += offsetMonths;
+    while (periodMonth < 0) {
+      periodMonth += 12;
+      periodYear -= 1;
+    }
+    while (periodMonth > 11) {
+      periodMonth -= 12;
+      periodYear += 1;
+    }
+
+    const startDate = new Date(periodYear, periodMonth, 16);
+    const nextMonth = periodMonth + 1;
+    const nextYear = nextMonth > 11 ? periodYear + 1 : periodYear;
+    const endDate = new Date(
+      nextYear,
+      nextMonth > 11 ? 0 : nextMonth,
+      15,
+      23,
+      59,
+      59,
+    );
+
+    return { startDate, endDate };
   }
 
   private generateBudgetSummaryInMemory(
     transactions: Array<Transaction & { autoCategory: string }>,
+    offsetMonths: number = 0,
   ): any {
-    // Credit card billing period: April 16, 2026 - May 15, 2026
-    const startDate = new Date(2026, 3, 16); // April 16, 2026 (month is 0-indexed)
-    const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
+    const { startDate, endDate } = this.calculateBillingPeriod(offsetMonths);
 
     // Filter transactions from billing period (negative amounts are expenses)
     // Exclude credit card billing transactions from bank accounts to avoid double-counting
@@ -297,8 +346,17 @@ export class CSVExporter {
       }),
     );
 
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     return {
-      month: "2026-04-16 to 2026-05-15",
+      month: `${formatDate(startDate)} to ${formatDate(endDate)}`,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
       generatedAt: new Date().toISOString(),
       summary,
       totalBudget: summary.reduce((sum, item) => sum + item.budget, 0),

@@ -353,6 +353,43 @@
         font-size: 0.9em;
       }
 
+      .month-selector {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .month-nav-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+      }
+
+      .month-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .month-nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .current-period {
+        color: white;
+        font-size: 1.1em;
+        font-weight: 600;
+        min-width: 280px;
+        text-align: center;
+      }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -392,6 +429,15 @@
       <div class="header">
         <h1>💰 Household Budget Dashboard</h1>
         <div class="subtitle">Track your monthly expenses</div>
+        <div class="month-selector">
+          <button class="month-nav-btn" onclick="previousMonth()">
+            ◀ Previous
+          </button>
+          <div class="current-period" id="current-period">Loading...</div>
+          <button class="month-nav-btn" id="next-btn" onclick="nextMonth()">
+            Next ▶
+          </button>
+        </div>
         <div class="period-badge" id="period-badge">Billing Period</div>
       </div>
 
@@ -464,6 +510,10 @@
     </div>
 
     <script>
+      // Global state
+      let currentMonthOffset = 0;
+      let currentPeriodData = null;
+
       const categoryNames = {
         groceries: "Groceries",
         restaurants: "Restaurants",
@@ -475,6 +525,9 @@
         insurance: "Insurance",
         travel: "Travel",
         other: "Other",
+        housing: "Housing",
+        education: "Education",
+        therapy: "Therapy",
       };
 
       function formatCurrency(amount) {
@@ -524,7 +577,9 @@
         modal.classList.add("active");
 
         try {
-          const response = await fetch("/api/transactions");
+          const response = await fetch(
+            `/api/transactions?offset=${currentMonthOffset}`,
+          );
           const transactions = await response.json();
 
           // Filter by billing period, expenses only, exclude credit card billings, remove duplicates by hash, and sort by date
@@ -636,7 +691,9 @@
         modal.classList.add("active");
 
         try {
-          const response = await fetch(`/api/transactions/${categoryKey}`);
+          const response = await fetch(
+            `/api/transactions/${categoryKey}?offset=${currentMonthOffset}`,
+          );
           const transactions = await response.json();
 
           if (transactions.length === 0) {
@@ -703,15 +760,33 @@
       }
 
       function isInBillingPeriod(dateStr) {
+        if (!currentPeriodData) return false;
         const txDate = parseDate(dateStr);
-        const startDate = new Date(2026, 3, 16); // April 16, 2026
-        const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
+        const startDate = new Date(currentPeriodData.startDate);
+        const endDate = new Date(currentPeriodData.endDate);
         return txDate >= startDate && txDate <= endDate;
+      }
+
+      function previousMonth() {
+        currentMonthOffset--;
+        loadDashboard();
+      }
+
+      function nextMonth() {
+        if (currentMonthOffset < 0) {
+          currentMonthOffset++;
+          loadDashboard();
+        }
       }
 
       async function loadDashboard() {
         try {
-          const response = await fetch("/api/budget-summary");
+          document.getElementById("loading").style.display = "block";
+          document.getElementById("content").style.display = "none";
+
+          const response = await fetch(
+            `/api/budget-summary?offset=${currentMonthOffset}`,
+          );
 
           if (!response.ok) {
             throw new Error(
@@ -721,12 +796,21 @@
 
           const data = await response.json();
 
-          // Store budget data globally for showAllTransactions
+          // Store budget data globally
           window.currentBudgetData = data;
+          currentPeriodData = data;
 
-          // Update period badge
+          // Update period display
+          const periodStart = new Date(data.startDate);
+          const periodEnd = new Date(data.endDate);
+          const monthName = periodStart.toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          });
+
+          document.getElementById("current-period").textContent = monthName;
           document.getElementById("period-badge").textContent =
-            `Billing Period: ${data.month}`;
+            `${data.month}`;
 
           // Update summary stats
           document.getElementById("total-budget").textContent = formatCurrency(
@@ -796,6 +880,10 @@
 
               categoriesContainer.appendChild(card);
             });
+
+          // Update navigation buttons
+          const nextBtn = document.getElementById("next-btn");
+          nextBtn.disabled = currentMonthOffset >= 0;
 
           // Hide loading, show content
           document.getElementById("loading").style.display = "none";
