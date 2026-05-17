@@ -296,15 +296,25 @@ export class CSVExporter {
     const { startDate, endDate } = this.calculateBillingPeriod(offsetMonths);
 
     // Filter transactions from billing period (negative amounts are expenses)
-    // Exclude credit card billing transactions from bank accounts to avoid double-counting
+    // Exclude internal transfers and credit card billings to avoid double-counting
     const currentMonthExpenses = transactions.filter((tx) => {
       const txDate = this.parseIsraeliDate(tx.date);
-      const isCreditCardBilling = tx.description.includes("חיוב לכרטיס");
+      const isInternalTransfer =
+        tx.description.includes("חיוב לכרטיס") || // Credit card billing from bank
+        tx.description.includes("מקס איט פי חיוב") || // Max IT Pay billing
+        tx.description.includes("העברה לגולדפלד רינה") || // Internal transfer to Rina
+        tx.description.includes("העברה ל גולדפלד") || // Alternative spelling
+        tx.description.includes("הע. לרינה קארין") || // Transfer to Rina Karin
+        tx.description.includes("הע. לבעית ברחובות") || // Internal transfer
+        tx.description.includes("הע. לבטיה כהן") || // Transfer to Batya
+        tx.description.includes("העברה לאוברבק מקסימיליאן") || // Transfer to Max
+        tx.description.includes("מש' מכספומט") || // ATM withdrawal
+        tx.description.includes("כספומט"); // ATM keyword
       return (
         txDate >= startDate &&
         txDate <= endDate &&
         tx.amount < 0 &&
-        !isCreditCardBilling
+        !isInternalTransfer
       );
     });
 
@@ -374,15 +384,25 @@ export class CSVExporter {
     const endDate = new Date(2026, 4, 15, 23, 59, 59); // May 15, 2026
 
     // Filter transactions from billing period (negative amounts are expenses)
-    // Exclude credit card billing transactions from bank accounts to avoid double-counting
+    // Exclude internal transfers and credit card billings to avoid double-counting
     const currentMonthExpenses = transactions.filter((tx) => {
       const txDate = this.parseIsraeliDate(tx.date);
-      const isCreditCardBilling = tx.description.includes("חיוב לכרטיס");
+      const isInternalTransfer =
+        tx.description.includes("חיוב לכרטיס") || // Credit card billing from bank
+        tx.description.includes("מקס איט פי חיוב") || // Max IT Pay billing
+        tx.description.includes("העברה לגולדפלד רינה") || // Internal transfer to Rina
+        tx.description.includes("העברה ל גולדפלד") || // Alternative spelling
+        tx.description.includes("הע. לרינה קארין") || // Transfer to Rina Karin
+        tx.description.includes("הע. לבעית ברחובות") || // Internal transfer
+        tx.description.includes("הע. לבטיה כהן") || // Transfer to Batya
+        tx.description.includes("העברה לאוברבק מקסימיליאן") || // Transfer to Max
+        tx.description.includes("מש' מכספומט") || // ATM withdrawal
+        tx.description.includes("כספומט"); // ATM keyword
       return (
         txDate >= startDate &&
         txDate <= endDate &&
         tx.amount < 0 &&
-        !isCreditCardBilling
+        !isInternalTransfer
       );
     });
 
