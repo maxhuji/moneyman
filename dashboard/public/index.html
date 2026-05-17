@@ -720,11 +720,11 @@
           );
           const transactions = await response.json();
 
-          // Filter by billing period, expenses only, exclude credit card billings, remove duplicates by hash, and sort by date
+          // Filter by billing period, expenses only, remove duplicates, and sort by date
+          // Backend already filters out internal transfers and excluded transactions
           const expenses = transactions
             .filter((tx) => parseFloat(tx.amount) < 0)
             .filter((tx) => isInBillingPeriod(tx.date))
-            .filter((tx) => !tx.description.includes("חיוב לכרטיס"))
             .filter(
               (tx, index, self) =>
                 index ===
@@ -844,11 +844,11 @@
             return;
           }
 
-          // Filter by billing period, expenses only, exclude credit card billings, remove duplicates by hash, and sort by date
+          // Filter by billing period, expenses only, remove duplicates, and sort by date
+          // Backend already filters out internal transfers and excluded transactions
           const expenses = transactions
             .filter((tx) => parseFloat(tx.amount) < 0)
             .filter((tx) => isInBillingPeriod(tx.date))
-            .filter((tx) => !tx.description.includes("חיוב לכרטיס"))
             .filter(
               (tx, index, self) =>
                 index ===
